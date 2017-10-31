@@ -11,14 +11,15 @@ for an example.
 
 ### Gradle 
 
-Here's how to use the reflections plugin in your projects. This will add the pre-scanned 
+The plugin is published in [Gradle plugin portal](https://plugins.gradle.org/plugin/io.github.manosbatsis.gradle.plugin.reflections),
+so it is rather easy to use. This will add the pre-scanned 
 metadata index in your jar as `META-INF/reflections/PROJECTNAME-reflections.xml`, with 
 *PROJECTNAME* substituted by your actual project name.
 
 ```gradle
 // import the reflections plugin
 plugins {
-	id "io.github.manosbatsis.gradle.plugin.reflections" version "1.0"
+	id "io.github.manosbatsis.gradle.plugin.reflections" version "1.1"
 }
 
 // you probably need this...

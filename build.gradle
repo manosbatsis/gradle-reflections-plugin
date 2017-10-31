@@ -5,7 +5,7 @@ plugins {
 	id "com.gradle.plugin-publish" version "0.9.9"
 }
 
-version = "1.0"
+version = "1.1"
 ext.organization = 'Manos Batsis'
 ext.url = 'https://github.com/manosbatsis/gradle-reflections-plugin'
 
