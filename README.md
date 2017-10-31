@@ -1,7 +1,8 @@
 # Gradle Reflections Plugin [![Build Status](https://travis-ci.org/manosbatsis/gradle-reflections-plugin.svg?branch=master)](https://travis-ci.org/manosbatsis/gradle-reflections-plugin)
 
-The plugin uses [Reflections](https://github.com/ronmamo/reflections) to scan your project classes at build time.
-It indexes the metadata, allows you to query it on runtime without the indexing performance hit.
+The plugin uses [Reflections](https://github.com/ronmamo/reflections) to scan and index your project classes 
+at build-time, allowing run-time querying without the indexing performance hit.
+
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
