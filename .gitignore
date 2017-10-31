@@ -12,3 +12,9 @@ gradle-app.setting
 
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
+/.idea/
+/gradle-reflections-plugin.ipr
+/gradle-reflections-plugin.iml
+/gradle-reflections-plugin.iws
+/src/test/projects/simple/build/
+/src/test/projects/simple/.gradle/

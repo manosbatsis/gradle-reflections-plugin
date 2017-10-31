@@ -1,0 +1,103 @@
+
+plugins {
+	id 'io.franzbecker.gradle-lombok' version '1.10'
+	id 'net.minecrell.licenser' version '0.3'
+	id "com.gradle.plugin-publish" version "0.9.9"
+}
+
+version = "1.0"
+ext.organization = 'Manos Batsis'
+ext.url = 'https://github.com/manosbatsis/gradle-reflections-plugin'
+
+// Publish to plugin portal
+apply plugin: "com.gradle.plugin-publish"
+// Add support for groovy
+apply plugin: 'groovy'
+// Apply the java-library plugin to add support for Java Library
+apply plugin: 'java-library'
+// Apply the lombok plugin to process the annotations used in our Java code
+apply plugin: 'io.franzbecker.gradle-lombok'
+// For IntelliJ IDEA users, just run './gradlew cleanIdea idea'
+apply plugin: 'idea'
+
+// License header formatting
+license {
+
+	ext {
+		name = project.name
+		organization = project.organization
+		url = project.url
+	}
+	header = project.file('src/etc/LICENSE_HEADER.txt')
+	newLine = false
+
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = "4.2.1"
+}
+
+test {
+    // Always run the tests
+    outputs.upToDateWhen { false }
+    // Turn on some console logging
+    testLogging {
+		//events "started", "passed", "skipped", "failed", "standardOut", "standardError"
+        exceptionFormat "full"
+        stackTraceFilters "entryPoint"
+        showStandardStreams = true
+    }
+}
+
+// Write the plugin's classpath to a file to share with the tests
+task createClasspathManifest {
+    def outputDir = file("$buildDir/$name")
+
+    inputs.files sourceSets.main.runtimeClasspath
+    outputs.dir outputDir
+
+    doLast {
+        outputDir.mkdirs()
+        file("$outputDir/plugin-classpath.txt").text = sourceSets.main.runtimeClasspath.join("\n")
+    }
+}
+
+// In this section you declare where to find the dependencies of your project
+repositories {
+	// Use jcenter for resolving your dependencies.
+	// You can declare any Maven/Ivy/file repository here.
+	jcenter()
+}
+
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    testCompile gradleTestKit()
+
+    // This dependency is exported to consumers, that is to say found on their compile classpath.
+	implementation "org.reflections:reflections:0.9.10"
+
+    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
+    implementation 'dom4j:dom4j:1.6.1'
+
+    // Use JUnit test framework
+    testImplementation 'junit:junit:4.12'
+
+    // Add the classpath file to the test runtime classpath
+    testRuntime files(createClasspathManifest)
+}
+
+// configuration to publish the plugin to the plugin portal
+pluginBundle {
+	website = 'http://www.gradle.org/'
+	vcsUrl = 'https://github.com/manosbatsis/gradle-reflections-plugin'
+	description = 'Pre-scan and embed a Reflections metadata index file into your artifact.'
+	tags = ['reflections']
+	plugins {
+		greetingsPlugin {
+			id = 'io.github.manosbatsis.gradle.plugin.reflections'
+			displayName = 'Gradle Reflections Plugin'
+		}
+	}
+}
