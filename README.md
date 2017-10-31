@@ -39,7 +39,7 @@ apply plugin: 'java'
 // reflections plugin needs the compiled
 // project classes, so either chain tasks
 // with dependsOn as bellow or execute tasks explicitly
-// either chain
+// when using the command line
 reflections{
     dependsOn classes
 }
