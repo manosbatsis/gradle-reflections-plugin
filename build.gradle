@@ -90,7 +90,7 @@ dependencies {
 
 // configuration to publish the plugin to the plugin portal
 pluginBundle {
-	website = 'http://www.gradle.org/'
+	website = 'https://github.com/manosbatsis/gradle-reflections-plugin'
 	vcsUrl = 'https://github.com/manosbatsis/gradle-reflections-plugin'
 	description = 'Pre-scan and embed a Reflections metadata index file into your artifact.'
 	tags = ['reflections']
