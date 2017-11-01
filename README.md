@@ -96,6 +96,8 @@ gradle build
 
 ### Tests
 
-The build has some [unit](src/test/java/io/github/manosbatsis/gradle/plugin/reflections/test/unit/ReflectionsPluginTest.java) and [integration](src/test/groovy/io/github/manosbatsis/gradle/plugin/reflections/test/integration/SimpleProjectIT.groovy) tests:
+The build has some [unit](src/test/java/io/github/manosbatsis/gradle/plugin/reflections/test/unit/ReflectionsPluginTest.java) 
+and [integration](src/test/groovy/io/github/manosbatsis/gradle/plugin/reflections/test/integration/SimpleProjectIT.groovy) 
+tests. The build creates the report at `build/reports/tests/test/index.html`:
 
 <img src="src/etc/doc/test-summary.png">
