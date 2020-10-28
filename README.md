@@ -1,4 +1,4 @@
-# Gradle Reflections Plugin [![Build Status](https://travis-ci.org/manosbatsis/gradle-reflections-plugin.svg?branch=master)](https://travis-ci.org/manosbatsis/gradle-reflections-plugin)
+# Gradle Reflections Plugin [![Build Status](https://travis-ci.com/manosbatsis/gradle-reflections-plugin.svg?branch=master)](https://travis-ci.com/manosbatsis/gradle-reflections-plugin)
 
 The plugin uses [Reflections](https://github.com/ronmamo/reflections) to scan and index your project classes 
 at build-time, allowing run-time querying without the indexing performance hit.
