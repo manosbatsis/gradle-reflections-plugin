@@ -1,59 +1,116 @@
-/*
- * Copyright (c) 2017 Manos Batsis <https://github.com/manosbatsis/gradle-reflections-plugin>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package io.github.manosbatsis.gradle.plugin.reflections;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.reflections.Reflections;
+import org.gradle.api.Project;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Gradle configuration model and corresponding default values
- * for the {@link ReflectionsPlugin}
+ * Configuration extension for {@link ReflectionsPlugin}, exposed as {@code reflectionsConfig}.
  */
-@NoArgsConstructor
-@Data
 public class ReflectionsPluginExtension {
 
-	/**
-	 * Gradle config section name
-	 */
-	public static final String EXTENSION_NAME = "reflectionsConfig";
+    public static final String EXTENSION_NAME = "reflectionsConfig";
 
-	/**
-	 * File name for the Reflections metadata index.
-	 * If empty, will default to <code>PROJECTNAME-reflections.xml</code>
-	 * where PROJECTNAME is the name of the Gradle project executing the plugin.
-	 */
-	private String indexFilename = null;
+    private String indexFilename;
+    private List<String> additionalIndexFilenames = new ArrayList<>();
+    private Object[] params = new Object[0];
+    private List<String> packages = new ArrayList<>();
+    private List<File> inputFiles = new ArrayList<>();
+    private File outputDirectory;
 
-	/**
-	 * An array of objects for convenient of a {@link Reflections}, where given {@code Object...} parameter types can be either:
-	 * <ul>
-	 *     <li>{@link String} - would add urls using {@link org.reflections.util.ClasspathHelper#forPackage(String, ClassLoader...)} ()}</li>
-	 *     <li>{@link Class} - would add urls using {@link org.reflections.util.ClasspathHelper#forClass(Class, ClassLoader...)} </li>
-	 *     <li>{@link ClassLoader} - would use this classloaders in order to find urls in {@link org.reflections.util.ClasspathHelper#forPackage(String, ClassLoader...)} and {@link org.reflections.util.ClasspathHelper#forClass(Class, ClassLoader...)}</li>
-	 *     <li>{@link org.reflections.scanners.Scanner} - would use given scanner, overriding the default scanners</li>
-	 *     <li>{@link java.net.URL} - would add the given url for scanning</li>
-	 *     <li>{@link Object[]} - would use each element as above</li>
-	 * </ul>
-	 *
-	 * Parameter types can be used in any order. <strong>There is no need to add a param for the project java source/class files.</strong>
-	 *
-	 * @see Reflections#Reflections(java.lang.Object...)
-	 */
-	private Object[] params = {};
+    public ReflectionsPluginExtension() {
+    }
 
+    public String getIndexFilename() {
+        return indexFilename;
+    }
+
+    public void setIndexFilename(String indexFilename) {
+        this.indexFilename = indexFilename;
+    }
+
+    public List<String> getAdditionalIndexFilenames() {
+        return additionalIndexFilenames;
+    }
+
+    public void setAdditionalIndexFilenames(Collection<String> additionalIndexFilenames) {
+        this.additionalIndexFilenames = additionalIndexFilenames == null
+                ? new ArrayList<>()
+                : new ArrayList<>(additionalIndexFilenames);
+    }
+
+    public void additionalIndexFilenames(String... filenames) {
+        if (filenames != null) {
+            Collections.addAll(this.additionalIndexFilenames, filenames);
+        }
+    }
+
+    public Object[] getParams() {
+        return params == null ? new Object[0] : params;
+    }
+
+    public void setParams(Object... params) {
+        this.params = params == null ? new Object[0] : params;
+    }
+
+    public List<String> getPackages() {
+        return packages;
+    }
+
+    public void setPackages(Collection<String> packages) {
+        this.packages = packages == null ? new ArrayList<>() : new ArrayList<>(packages);
+    }
+
+    public void packages(String... packages) {
+        if (packages != null) {
+            Collections.addAll(this.packages, packages);
+        }
+    }
+
+    public List<File> getInputFiles() {
+        return inputFiles;
+    }
+
+    public void setInputFiles(Collection<File> inputFiles) {
+        this.inputFiles = inputFiles == null ? new ArrayList<>() : new ArrayList<>(inputFiles);
+    }
+
+    public File getOutputDirectory() {
+        return outputDirectory;
+    }
+
+    public void setOutputDirectory(File outputDirectory) {
+        this.outputDirectory = outputDirectory;
+    }
+
+    public List<String> resolveIndexFilenames(Project project) {
+        List<String> resolved = new ArrayList<>();
+        String primary = (indexFilename != null && !indexFilename.trim().isEmpty())
+                ? indexFilename.trim()
+                : "META-INF/reflections/" + project.getName() + "-reflections.xml";
+        resolved.add(primary);
+        for (String extra : additionalIndexFilenames) {
+            if (extra != null && !extra.trim().isEmpty() && !resolved.contains(extra.trim())) {
+                resolved.add(extra.trim());
+            }
+        }
+        return resolved;
+    }
+
+    @Override
+    public String toString() {
+        return "ReflectionsPluginExtension{"
+                + "indexFilename='" + indexFilename + '\''
+                + ", additionalIndexFilenames=" + additionalIndexFilenames
+                + ", params=" + Arrays.toString(params)
+                + ", packages=" + packages
+                + ", inputFiles=" + inputFiles
+                + ", outputDirectory=" + outputDirectory
+                + '}';
+    }
 }

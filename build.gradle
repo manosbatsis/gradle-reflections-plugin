@@ -1,103 +1,92 @@
-
 plugins {
-	id 'io.franzbecker.gradle-lombok' version '1.10'
-	id 'net.minecrell.licenser' version '0.3'
-	id "com.gradle.plugin-publish" version "0.9.9"
+    id 'groovy'
+    id 'java-library'
+    id 'java-gradle-plugin'
+    id 'maven-publish'
 }
 
-version = "1.1"
-ext.organization = 'Manos Batsis'
-ext.url = 'https://github.com/manosbatsis/gradle-reflections-plugin'
+group = 'io.github.manosbatsis.gradle.plugin'
+version = '1.2.0'
 
-// Publish to plugin portal
-apply plugin: "com.gradle.plugin-publish"
-// Add support for groovy
-apply plugin: 'groovy'
-// Apply the java-library plugin to add support for Java Library
-apply plugin: 'java-library'
-// Apply the lombok plugin to process the annotations used in our Java code
-apply plugin: 'io.franzbecker.gradle-lombok'
-// For IntelliJ IDEA users, just run './gradlew cleanIdea idea'
-apply plugin: 'idea'
-
-// License header formatting
-license {
-
-	ext {
-		name = project.name
-		organization = project.organization
-		url = project.url
-	}
-	header = project.file('src/etc/LICENSE_HEADER.txt')
-	newLine = false
-
-}
-
-task wrapper(type: Wrapper) {
-    gradleVersion = "4.2.1"
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    withSourcesJar()
 }
 
 test {
-    // Always run the tests
     outputs.upToDateWhen { false }
-    // Turn on some console logging
     testLogging {
-		//events "started", "passed", "skipped", "failed", "standardOut", "standardError"
-        exceptionFormat "full"
-        stackTraceFilters "entryPoint"
+        exceptionFormat = 'full'
+        stackTraceFilters 'entryPoint'
         showStandardStreams = true
     }
 }
 
-// Write the plugin's classpath to a file to share with the tests
-task createClasspathManifest {
-    def outputDir = file("$buildDir/$name")
-
-    inputs.files sourceSets.main.runtimeClasspath
-    outputs.dir outputDir
+def createClasspathManifest = tasks.register('createClasspathManifest') {
+    def outputDir = layout.buildDirectory.dir('createClasspathManifest')
+    def classpathFiles = sourceSets.main.runtimeClasspath
+    inputs.files(classpathFiles)
+    outputs.dir(outputDir)
 
     doLast {
-        outputDir.mkdirs()
-        file("$outputDir/plugin-classpath.txt").text = sourceSets.main.runtimeClasspath.join("\n")
+        def dir = outputDir.get().asFile
+        dir.mkdirs()
+        new File(dir, 'plugin-classpath.txt').text = classpathFiles.collect { it.absolutePath }.join('\n')
     }
 }
 
-// In this section you declare where to find the dependencies of your project
 repositories {
-	// Use jcenter for resolving your dependencies.
-	// You can declare any Maven/Ivy/file repository here.
-	jcenter()
+    mavenLocal()
+    mavenCentral()
+    google()
+    maven { url 'https://jitpack.io' }
 }
-
 
 dependencies {
-    compile gradleApi()
-    compile localGroovy()
-    testCompile gradleTestKit()
+    implementation gradleApi()
+    implementation localGroovy()
 
-    // This dependency is exported to consumers, that is to say found on their compile classpath.
-	implementation "org.reflections:reflections:0.9.10"
+    implementation 'com.github.Hatzen:reflections:8dc2bbd'
+    implementation('org.dom4j:dom4j:2.1.3') {
+        exclude group: 'pull-parser', module: 'pull-parser'
+        exclude group: 'xpp3', module: 'xpp3'
+        exclude group: 'xml-apis', module: 'xml-apis'
+    }
+    implementation 'com.google.code.gson:gson:2.10.1'
 
-    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
-    implementation 'dom4j:dom4j:1.6.1'
-
-    // Use JUnit test framework
-    testImplementation 'junit:junit:4.12'
-
-    // Add the classpath file to the test runtime classpath
-    testRuntime files(createClasspathManifest)
+    testImplementation gradleTestKit()
+    testImplementation 'junit:junit:4.13.2'
+    testRuntimeOnly files(createClasspathManifest)
 }
 
-// configuration to publish the plugin to the plugin portal
-pluginBundle {
-	website = 'https://github.com/manosbatsis/gradle-reflections-plugin'
-	vcsUrl = 'https://github.com/manosbatsis/gradle-reflections-plugin'
-	description = 'Pre-scan and embed a Reflections metadata index file into your artifact.'
-	tags = ['reflections']
-	plugins {
-		greetingsPlugin {
-			id = 'io.github.manosbatsis.gradle.plugin.reflections'
-			displayName = 'Gradle Reflections Plugin'
-		}
-	}
+gradlePlugin {
+    plugins {
+        reflectionsPlugin {
+            id = 'io.github.manosbatsis.gradle.plugin.reflections'
+            displayName = 'Gradle Reflections Plugin'
+            description = 'Pre-scan and embed a Reflections metadata index file into JVM and Android artifacts.'
+            implementationClass = 'io.github.manosbatsis.gradle.plugin.reflections.ReflectionsPlugin'
+        }
+    }
+}
+
+tasks.named('processResources') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+publishing {
+    publications.withType(MavenPublication).configureEach {
+        pom {
+            name = 'gradle-reflections-plugin'
+            description = 'Pre-scan and embed a Reflections metadata index file into JVM and Android artifacts.'
+            url = 'https://github.com/Hatzen/gradle-reflections-plugin'
+            licenses {
+                license {
+                    name = 'The Apache Software License, Version 2.0'
+                    url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                }
+            }
+        }
+    }
 }
