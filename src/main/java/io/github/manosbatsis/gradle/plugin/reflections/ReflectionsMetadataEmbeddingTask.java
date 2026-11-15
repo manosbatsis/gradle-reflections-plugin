@@ -1,110 +1,71 @@
-/*
- * Copyright (c) 2017 Manos Batsis <https://github.com/manosbatsis/gradle-reflections-plugin>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package io.github.manosbatsis.gradle.plugin.reflections;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-
-import com.google.common.collect.ObjectArrays;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskAction;
-import org.reflections.Reflections;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
- * Embeds a pre-scanned Reflections metadata index file into your project artifact
+ * Gradle task that pre-scans compiled classes for JVM or custom builds and writes Reflections index files.
  */
 public class ReflectionsMetadataEmbeddingTask extends DefaultTask {
 
-	public static final String TASK_NAME = "reflections";
+    public static final String TASK_NAME = "reflections";
 
-	/**
-	 * Generates the Reflections metadata index file
-	 */
-	@TaskAction
-	public void generateMetadataIndex() {
-		Project project = this.getProject();
+    @TaskAction
+    public void generateMetadataIndex() {
+        Project project = getProject();
+        ReflectionsPluginExtension extension = project.getExtensions().findByType(ReflectionsPluginExtension.class);
+        if (extension == null) {
+            extension = new ReflectionsPluginExtension();
+        }
 
-		// tell reflections to use the project logger
-		Reflections.log = project.getLogger();
+        Collection<File> classRoots = resolveInputDirectories(project, extension);
+        File outputDir = resolveOutputDirectory(project, extension);
+        List<String> indexFilenames = extension.resolveIndexFilenames(project);
 
-		// get extension config
-		ReflectionsPluginExtension extension = getExtension();
+        ReflectionsIndexGenerator.generateIndex(
+                classRoots,
+                extension.getPackages(),
+                extension.getParams(),
+                outputDir,
+                indexFilenames
+        );
+    }
 
-		// obtain and initialize output directory
-		File outputDir = resolveIndexFileDestinationDir();
+    private Collection<File> resolveInputDirectories(Project project, ReflectionsPluginExtension extension) {
+        if (extension.getInputFiles() != null && !extension.getInputFiles().isEmpty()) {
+            return extension.getInputFiles();
+        }
+        SourceSetContainer sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
+        if (sourceSets != null) {
+            SourceSet main = sourceSets.findByName(SourceSet.MAIN_SOURCE_SET_NAME);
+            if (main != null) {
+                return new ArrayList<>(main.getOutput().getClassesDirs().getFiles());
+            }
+        }
+        throw new GradleException(
+                "No Java sourceSets or reflectionsConfig.inputFiles found. Configure inputFiles/outputDirectory or apply java/android plugin.");
+    }
 
-		// create the Reflections index file
-		Reflections reflections = new Reflections(ObjectArrays.concat(this.parseOutputDirUrl(), extension.getParams()));
-		reflections.save(outputDir + File.separator + extension.getIndexFilename());
-
-	}
-
-	/**
-	 * Get extension config
-	 */
-	private ReflectionsPluginExtension getExtension() {
-		Project project = this.getProject();
-
-		// get reflectionsConfig
-		ReflectionsPluginExtension extension = project.getExtensions().findByType(ReflectionsPluginExtension.class);
-
-		// fallback to defaults if missing
-		if (extension == null) {
-			extension = new ReflectionsPluginExtension();
-		}
-
-		// add index filename if missing
-		if (extension.getIndexFilename() == null) {
-			extension.setIndexFilename(project.getName() + "-reflections.xml");
-		}
-
-		return extension;
-	}
-
-	/**
-	 * Obtain and initialize Reflections index output directory
-	 */
-	private File resolveIndexFileDestinationDir() {
-		File javaOutputDir = resolveOutputDirectory();
-		File outputDir = new File(javaOutputDir.getAbsolutePath() + File.separator + "META-INF" + File.separator + "reflections");
-		outputDir.mkdirs();
-		return outputDir;
-	}
-
-	/**
-	 * Obtain the main Java output directory
-	 */
-	private File resolveOutputDirectory() {
-		SourceSetContainer sources = (SourceSetContainer) this.getProject().getProperties().get("sourceSets");
-		return sources.getByName("main").getJava().getOutputDir();
-	}
-
-	/**
-	 * Obtain the main Java output directory as a <code>{@link URL}</code>
-	 */
-	private URL parseOutputDirUrl() {
-		try {
-			return resolveOutputDirectory().toURI().toURL();
-		}
-		catch (MalformedURLException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		}
-	}
-
+    private File resolveOutputDirectory(Project project, ReflectionsPluginExtension extension) {
+        if (extension.getOutputDirectory() != null) {
+            return extension.getOutputDirectory();
+        }
+        SourceSetContainer sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
+        if (sourceSets != null) {
+            SourceSet main = sourceSets.findByName(SourceSet.MAIN_SOURCE_SET_NAME);
+            if (main != null && main.getOutput().getResourcesDir() != null) {
+                return main.getOutput().getResourcesDir();
+            }
+        }
+        return project.getLayout().getBuildDirectory().dir("generated/resources/reflections/main").get().getAsFile();
+    }
 }
